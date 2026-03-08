@@ -76,11 +76,11 @@ fn give_flowers_to_npcs(
             let distance = player_transform.translation.distance(npc_transform.translation);
             // If player is close to NPC (within 100 units), give flower
             if distance < 100.0 {
-                received_flowers.has_received = true;
                 // Increase score if female NPC receives flower
-                if npc_entity.gender == NpcGender::Female {
+                if npc_entity.gender == NpcGender::Female && !received_flowers.has_received {
                     game.score += 1;
                 }
+                received_flowers.has_received = true;
             }
         }
     }
