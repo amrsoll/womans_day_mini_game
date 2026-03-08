@@ -4,10 +4,16 @@ use bevy::dev_tools::picking_debug::{DebugPickingMode, DebugPickingPlugin};
 
 mod player;
 use player::*;
+mod npc;
+use npc::*;
+mod animation;
+use animation::*;
+
 // mod map;
 // use map::*;
 
 const GLOB_FPS: u8 = 60;
+const NUMBER_NPCS: u8 = 5;
 
 // #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
 // enum GameState {
@@ -21,28 +27,6 @@ const GLOB_FPS: u8 = 60;
 //     score: i32,
 // }
 
-#[derive(Component)]
-struct AnimationConfig {
-    first_sprite_index: usize,
-    last_sprite_index: usize,
-    fps: u8,
-    frame_timer: Timer,
-}
-
-impl AnimationConfig {
-    fn new(first: usize, last: usize, fps: u8) -> Self {
-        Self {
-            first_sprite_index: first,
-            last_sprite_index: last,
-            fps,
-            frame_timer: Self::timer_from_fps(fps),
-        }
-    }
-
-    fn timer_from_fps(fps: u8) -> Timer {
-        Timer::new(Duration::from_secs_f32(1.0 / (fps as f32)), TimerMode::Repeating)
-    }
-}
 
 // This system loops through all the sprites in the `TextureAtlas`, from  `first_sprite_index` to
 // `last_sprite_index` (both defined in `AnimationConfig`).
@@ -147,6 +131,25 @@ fn setup(
         animation_config_2,
         player::PlayerEntity::new(),
     ));
+
+    // Spawn some random NPCs
+    for i in 0..NUMBER_NPCS {
+        let x = (i * 100) as f32 - 200.0;
+        let y = (i * 100) as f32 - 200.0;
+        let gender = if rand::random::<f32>() > 0.5 {
+            NpcGender::Male
+        } else {
+            NpcGender::Female
+        };
+        
+        spawn_npc(
+            &mut commands,
+            &asset_server,
+            &mut texture_atlas_layouts,
+            Vec3::new(x, y, 0.0),
+            gender,
+        );
+    }
 }
 
 
@@ -170,5 +173,6 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, execute_animations)
         .add_systems(Update, (PlayerEntity::set_movement_speed, move_players).chain())
+        .add_systems(Update, (set_npc_movement, move_npcs).chain())
         .run();
 }
