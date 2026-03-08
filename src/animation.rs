@@ -1,5 +1,5 @@
 use std::time::Duration;
-use bevy::{ecs::relationship::RelationshipSourceCollection, input::*, prelude::*};
+use bevy::{prelude::*};
 
 #[derive(Component)]
 pub struct AnimationConfig {

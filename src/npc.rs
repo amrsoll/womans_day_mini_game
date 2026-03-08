@@ -1,6 +1,5 @@
 use bevy::math::Vec2;
 use bevy::prelude::*;
-use rand::Rng;
 use std::time::Duration;
 
 // mod animation;
@@ -33,22 +32,41 @@ impl NpcEntity {
     }
 }
 
-pub fn set_npc_movement(mut query: Query<&mut NpcEntity>) {
-    for mut npc in &mut query {
-        // Randomly change direction occasionally
-        if rand::random::<f32>() < 0.02 {
-            npc.move_direction = Vec2::new(
-                rand::random::<f32>() * 2.0 - 1.0,
-                rand::random::<f32>() * 2.0 - 1.0,
-            ).normalize_or_zero();
-            npc.moving = npc.move_direction.length() > 0.1;
+#[derive(Component)]
+pub struct ReceivedFlowers {
+    pub has_received: bool,
+}
+
+impl ReceivedFlowers {
+    pub fn new() -> Self {
+        Self { has_received: false }
+    }
+}
+
+pub fn set_npc_movement(
+    mut npc_query: Query<(&mut NpcEntity, &ReceivedFlowers)>,
+) {
+    for (mut npc, received_flowers) in &mut npc_query {
+        // Only change direction if NPC hasn't received flowers yet
+        if !received_flowers.has_received {
+            if rand::random::<f32>() < 0.02 {
+                npc.move_direction = Vec2::new(
+                    rand::random::<f32>() * 2.0 - 1.0,
+                    rand::random::<f32>() * 2.0 - 1.0,
+                ).normalize_or_zero();
+                npc.moving = npc.move_direction.length() > 0.1;
+            }
+        } else {
+            // If NPC has received flowers, stop moving
+            npc.moving = false;
+            npc.move_direction = Vec2::new(0.0, 0.0);
         }
     }
 }
 
-pub fn move_npcs(time: Res<Time>, mut query: Query<(&mut Transform, &mut NpcEntity)>) {
+pub fn move_npcs(time: Res<Time>, mut query: Query<(&mut Transform, &NpcEntity)>) {
     let dt = time.delta_secs();
-    for (mut transform, mut npc) in &mut query {
+    for (mut transform, npc) in &mut query {
         if npc.moving {
             let translation_2d = transform.translation.truncate() + npc.move_direction * npc.speed * dt;
             transform.translation = Vec3::from_array([translation_2d.x, translation_2d.y, 0.0]);
@@ -78,6 +96,7 @@ pub fn spawn_npc(
 
     commands.spawn((
         NpcEntity::new(gender),
+        ReceivedFlowers::new(),
         Sprite {
             image: texture.clone(),
             texture_atlas: Some(TextureAtlas {

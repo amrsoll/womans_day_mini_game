@@ -1,6 +1,6 @@
-use std::time::Duration;
-use bevy::{ecs::relationship::RelationshipSourceCollection, input::*, prelude::*};
+use bevy::{input::*, prelude::*};
 use bevy::dev_tools::picking_debug::{DebugPickingMode, DebugPickingPlugin};
+use crate::common_conditions::input_just_pressed;
 
 mod player;
 use player::*;
@@ -61,6 +61,24 @@ fn move_players(time: Res<Time>, mut query: Query<(&mut Transform, &PlayerEntity
         transform.translation = Vec3::from_array([translation_2d.x, translation_2d.y, 0.0]);
     }
 
+}
+
+fn give_flowers_to_npcs(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut npc_query: Query<(&mut ReceivedFlowers, &Transform)>,
+    player_query: Query<(&Transform, &PlayerEntity)>,
+) {
+    // Check if any player is close to any NPC
+    for (player_transform, _player_entity) in &player_query {
+        for (mut received_flowers, npc_transform) in &mut npc_query {
+            // Calculate distance between player and NPC
+            let distance = player_transform.translation.distance(npc_transform.translation);
+            // If player is close to NPC (within 100 units), give flower
+            if distance < 100.0 {
+                received_flowers.has_received = true;
+            }
+        }
+    }
 }
 
 fn setup(
@@ -134,8 +152,8 @@ fn setup(
 
     // Spawn some random NPCs
     for i in 0..NUMBER_NPCS {
-        let x = (i * 100) as f32 - 200.0;
-        let y = (i * 100) as f32 - 200.0;
+        let x = (i as f32 * 100.0) - 200.0;
+        let y = (i as f32 * 100.0) - 200.0;
         let gender = if rand::random::<f32>() > 0.5 {
             NpcGender::Male
         } else {
@@ -174,5 +192,6 @@ fn main() {
         .add_systems(Update, execute_animations)
         .add_systems(Update, (PlayerEntity::set_movement_speed, move_players).chain())
         .add_systems(Update, (set_npc_movement, move_npcs).chain())
+        .add_systems(Update, give_flowers_to_npcs.run_if(input_just_pressed(KeyCode::Space)))
         .run();
 }
