@@ -12,7 +12,6 @@ use animation::*;
 // mod map;
 // use map::*;
 
-const GLOB_FPS: u8 = 60;
 const NUMBER_NPCS: u8 = 5;
 
 // #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
@@ -22,11 +21,10 @@ const NUMBER_NPCS: u8 = 5;
 //     GameOver,
 // }
 
-// #[derive(Resource, Default)]
-// struct Game {
-//     score: i32,
-// }
-
+#[derive(Resource, Default)]
+struct Game {
+    score: i32,
+}
 
 // This system loops through all the sprites in the `TextureAtlas`, from  `first_sprite_index` to
 // `last_sprite_index` (both defined in `AnimationConfig`).
@@ -64,18 +62,22 @@ fn move_players(time: Res<Time>, mut query: Query<(&mut Transform, &PlayerEntity
 }
 
 fn give_flowers_to_npcs(
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut npc_query: Query<(&mut ReceivedFlowers, &Transform)>,
+    mut npc_query: Query<(&mut ReceivedFlowers, &Transform, &NpcEntity)>,
     player_query: Query<(&Transform, &PlayerEntity)>,
+    mut game: ResMut<Game>,
 ) {
     // Check if any player is close to any NPC
     for (player_transform, _player_entity) in &player_query {
-        for (mut received_flowers, npc_transform) in &mut npc_query {
+        for (mut received_flowers, npc_transform, npc_entity) in &mut npc_query {
             // Calculate distance between player and NPC
             let distance = player_transform.translation.distance(npc_transform.translation);
             // If player is close to NPC (within 100 units), give flower
             if distance < 100.0 {
                 received_flowers.has_received = true;
+                // Increase score if female NPC receives flower
+                if npc_entity.gender == NpcGender::Female {
+                    game.score += 1;
+                }
             }
         }
     }
@@ -85,17 +87,17 @@ fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-    // mut game: ResMut<Game>
+    mut game: ResMut<Game>
 ) {
 
     // reset the game state
-    // game.score = 0;
+    game.score = 0;
 
     commands.spawn(Camera2d);
 
     // Create a minimal UI explaining how to interact with the example
     commands.spawn((
-        Text::new("WASD / Arrows for movement\nMouse to aim\nLeft click to shoot"),
+        Text::new("WASD / Arrows for movement\nMouse to aim\nSpace to give flowers to nearby people"),
         Node {
             position_type: PositionType::Absolute,
             top: px(12),
@@ -170,7 +172,6 @@ fn setup(
     }
 }
 
-
 fn main() {
     App::new()
         .insert_resource(DebugPickingMode::Normal)
@@ -186,10 +187,11 @@ fn main() {
                 KeyCode::F3,
             )),
         )
-        // .init_resource::<Game>()
+        .init_resource::<Game>()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_systems(Startup, setup)
         .add_systems(Update, execute_animations)
+        .add_systems(Update, npc::execute_npc_animations)
         .add_systems(Update, (PlayerEntity::set_movement_speed, move_players).chain())
         .add_systems(Update, (set_npc_movement, move_npcs).chain())
         .add_systems(Update, give_flowers_to_npcs.run_if(input_just_pressed(KeyCode::Space)))

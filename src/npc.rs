@@ -111,7 +111,7 @@ pub fn spawn_npc(
 }
 
 // Animation system for NPCs
-fn execute_animations(
+pub fn execute_npc_animations(
     time: Res<Time>,
     mut query: Query<(&mut AnimationConfig, &mut Sprite, &NpcEntity)>,
 ) {
