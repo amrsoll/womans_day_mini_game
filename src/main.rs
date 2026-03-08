@@ -2,6 +2,9 @@ use bevy::{input::*, prelude::*};
 use bevy::dev_tools::picking_debug::{DebugPickingMode, DebugPickingPlugin};
 use crate::common_conditions::input_just_pressed;
 
+#[derive(Component)]
+struct ScoreDisplay;
+
 mod player;
 use player::*;
 mod npc;
@@ -83,6 +86,15 @@ fn give_flowers_to_npcs(
     }
 }
 
+fn update_score_display(
+    game: Res<Game>,
+    mut score_query: Query<&mut Text, With<ScoreDisplay>>,
+) {
+    for mut text in &mut score_query {
+        text.0 = format!("Score: {}", game.score);
+    }
+}
+
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -104,6 +116,18 @@ fn setup(
             left: px(12),
             ..default()
         },
+    ));
+
+    // Display current score in bottom right corner
+    commands.spawn((
+        Text::new("Score: 0"),
+        Node {
+            position_type: PositionType::Absolute,
+            bottom: px(12),
+            right: px(12),
+            ..default()
+        },
+        ScoreDisplay,
     ));
 
     // Load the sprite sheet using the `AssetServer`
@@ -195,5 +219,6 @@ fn main() {
         .add_systems(Update, (PlayerEntity::set_movement_speed, move_players).chain())
         .add_systems(Update, (set_npc_movement, move_npcs).chain())
         .add_systems(Update, give_flowers_to_npcs.run_if(input_just_pressed(KeyCode::Space)))
+        .add_systems(Update, update_score_display)
         .run();
 }
