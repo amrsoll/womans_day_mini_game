@@ -72,6 +72,12 @@ To run it using [Wasmtime]:
 nix run ".#hello-wasmtime-exec"
 ```
 
+Run on a completely open port
+
+```shell
+WASM_SERVER_RUNNER_ADDRESS=0.0.0.0 cargo run 
+```
+
 ## Advantages of Nix for Wasm development
 
 * Many languages can build Wasm but creating multi-language development environments (without Nix, of course) is hard.

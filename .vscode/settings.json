@@ -1,0 +1,6 @@
+{
+    "rust-analyzer.check.targets": [
+        "wasm32-unknown-unknown"
+    ],
+    "rust-analyzer.debug.engine": "llvm-vs-code-extensions.lldb-dap"
+}
