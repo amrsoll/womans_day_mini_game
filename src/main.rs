@@ -1,5 +1,6 @@
 use bevy::{input::*, prelude::*};
-use bevy::dev_tools::picking_debug::{DebugPickingMode, DebugPickingPlugin};
+use bevy::dev_tools::picking_debug::DebugPickingMode;
+// use bevy::dev_tools::picking_debug::DebugPickingPlugin;
 use crate::common_conditions::input_just_pressed;
 
 #[derive(Component)]
@@ -16,7 +17,6 @@ use animation::*;
 // use map::*;
 
 const NUMBER_NPCS: u8 = 5;
-
 // #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
 // enum GameState {
 //     #[default]
@@ -57,11 +57,10 @@ fn execute_animations(time: Res<Time>, mut query: Query<(&mut AnimationConfig, &
 fn move_players(time: Res<Time>, mut query: Query<(&mut Transform, &PlayerEntity)>) {
     let dt = time.delta_secs();
     for (mut transform, player) in &mut query {
-        
         let translation_2d = transform.translation.truncate() + player.run_direction * player.speed * dt;
-        transform.translation = Vec3::from_array([translation_2d.x, translation_2d.y, 0.0]);
+        let translation_in_area = stay_in_area(translation_2d);
+        transform.translation = Vec3::from_array([translation_in_area.x, translation_in_area.y, 0.0]);
     }
-
 }
 
 fn give_flowers_to_npcs(
@@ -78,6 +77,8 @@ fn give_flowers_to_npcs(
             if distance < 100.0 {
                 // Increase score if female NPC receives flower
                 if npc_entity.gender == NpcGender::Female && !received_flowers.has_received {
+                    game.score += 3;
+                } else if npc_entity.gender == NpcGender::Male && !received_flowers.has_received {
                     game.score += 1;
                 }
                 received_flowers.has_received = true;
@@ -220,5 +221,6 @@ fn main() {
         .add_systems(Update, (set_npc_movement, move_npcs).chain())
         .add_systems(Update, give_flowers_to_npcs.run_if(input_just_pressed(KeyCode::Space)))
         .add_systems(Update, update_score_display)
+        .add_systems(Update, npc::despawn_npc_after_flowers)
         .run();
 }

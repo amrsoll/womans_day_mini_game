@@ -1,11 +1,22 @@
 use bevy::math::Vec2;
 use bevy::prelude::*;
-use std::time::Duration;
+
+pub const AREA_SIZE: Vec2 = vec2(1280.0, 720.0);
+
+// Centralise on the center
+pub fn stay_in_area(position: Vec2) -> Vec2 {
+    Vec2 {
+        x: (position.x + AREA_SIZE.x / 2.0) % AREA_SIZE.x - AREA_SIZE.x / 2.0,
+        y: (position.y - AREA_SIZE.y / 2.0) % AREA_SIZE.y + AREA_SIZE.y / 2.0,
+    }
+}
+
 
 // mod animation;
 use crate::animation::*;
 
 const NPC_SPEED: f32 = 100.0;
+
 
 #[derive(Component)]
 pub struct NpcEntity {
@@ -69,8 +80,48 @@ pub fn move_npcs(time: Res<Time>, mut query: Query<(&mut Transform, &NpcEntity)>
     for (mut transform, npc) in &mut query {
         if npc.moving {
             let translation_2d = transform.translation.truncate() + npc.move_direction * npc.speed * dt;
-            transform.translation = Vec3::from_array([translation_2d.x, translation_2d.y, 0.0]);
+            let translation_in_area = stay_in_area(translation_2d);
+            transform.translation = Vec3::from_array([translation_in_area.x, translation_in_area.y, 0.0]);
         }
+    }
+}
+
+pub fn despawn_npc_after_flowers(
+    mut commands: Commands,
+    npc_query: Query<(Entity, &ReceivedFlowers), With<NpcEntity>>,
+    asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    // Check for NPCs that have received flowers and collect them for despawning
+    let mut to_despawn = Vec::new();
+    for (entity, received_flowers) in &npc_query {
+        if received_flowers.has_received {
+            to_despawn.push(entity);
+        }
+    }
+    
+    // Despawn the NPCs that have received flowers
+    for entity in &to_despawn {
+        commands.entity(*entity).despawn();
+    }
+    
+    // Spawn new NPCs in random positions to replace despawned ones
+    for _ in 0..to_despawn.len() {
+        spawn_npc(
+            &mut commands,
+            &asset_server,
+            &mut texture_atlas_layouts,
+            Vec3::new(
+                rand::random::<f32>() * 400.0 - 200.0,
+                rand::random::<f32>() * 400.0 - 200.0,
+                0.0
+            ),
+            if rand::random::<f32>() > 0.5 {
+                NpcGender::Male
+            } else {
+                NpcGender::Female
+            }
+        );
     }
 }
 
