@@ -1,5 +1,6 @@
 use bevy::math::Vec2;
 use bevy::prelude::*;
+use std::any::TypeId;
 
 pub const AREA_SIZE: Vec2 = vec2(1280.0, 720.0);
 
@@ -17,6 +18,11 @@ use crate::animation::*;
 
 const NPC_SPEED: f32 = 100.0;
 
+#[derive(Component)]
+pub struct Despawns {
+    timer: Option<Timer>,
+}
+
 
 #[derive(Component)]
 pub struct NpcEntity {
@@ -25,6 +31,9 @@ pub struct NpcEntity {
     pub moving: bool,
     pub gender: NpcGender,
 }
+
+#[derive(Component)]
+pub struct FlowerEntity;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum NpcGender {
@@ -46,11 +55,15 @@ impl NpcEntity {
 #[derive(Component)]
 pub struct ReceivedFlowers {
     pub has_received: bool,
+    pub flower_spawned: bool,
 }
 
 impl ReceivedFlowers {
     pub fn new() -> Self {
-        Self { has_received: false }
+        Self { 
+            has_received: false, 
+            flower_spawned: false,
+        }
     }
 }
 
@@ -86,17 +99,61 @@ pub fn move_npcs(time: Res<Time>, mut query: Query<(&mut Transform, &NpcEntity)>
     }
 }
 
-pub fn despawn_npc_after_flowers(
+pub fn spawn_flower_over_npc(
     mut commands: Commands,
-    npc_query: Query<(Entity, &ReceivedFlowers), With<NpcEntity>>,
+    mut npc_query: Query<(&Transform, &mut ReceivedFlowers, &mut Despawns), With<NpcEntity>>,
+    asset_server: Res<AssetServer>,
+    // mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    // Check for NPCs that have received flowers but haven't spawned flower yet
+    for (npc_transform, mut received_flowers, mut despawns) in &mut npc_query {
+        if received_flowers.has_received && !received_flowers.flower_spawned {
+            // Spawn flower sprite above the NPC
+            let flower_texture = asset_server.load("textures/rpg/props/generic-rpg-flower01.png");
+            
+            // Spawn flower sprite with slight offset above NPC
+            commands.spawn((
+                Sprite {
+                    image: flower_texture,
+                    custom_size: Some(vec2(2.0*8.0, 2.0*8.0)),
+                    ..Default::default()
+                },
+                Transform::from_scale(Vec3::splat(3.0)).with_translation(Vec3::new(
+                    npc_transform.translation.x,
+                    npc_transform.translation.y + 45.0, // Offset up so it doesn't collide with NPC
+                    1.0
+                )),
+                // Add a component to identify flower entities for later despawning
+                FlowerEntity,
+                Despawns { timer: Some(Timer::from_seconds(5.0, TimerMode::Once)) },
+            ));
+            received_flowers.flower_spawned = true;
+            match despawns.timer {
+                None => despawns.timer = Some(Timer::from_seconds(5.0, TimerMode::Once)),
+                _ => (),
+            }
+        }
+    }
+}
+
+pub fn despawn_entities<T: Component>(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut npc_query: Query<(Entity, &mut Despawns), With<T>>,
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     // Check for NPCs that have received flowers and collect them for despawning
     let mut to_despawn = Vec::new();
-    for (entity, received_flowers) in &npc_query {
-        if received_flowers.has_received {
-            to_despawn.push(entity);
+    for (entity, mut despawns) in &mut npc_query {
+        match &mut despawns.timer {
+            Some(timer) => {
+                timer.tick(time.delta());
+                if timer.just_finished() {
+                    to_despawn.push(entity);
+                }
+            },
+            _ => (),
         }
     }
     
@@ -106,22 +163,24 @@ pub fn despawn_npc_after_flowers(
     }
     
     // Spawn new NPCs in random positions to replace despawned ones
-    for _ in 0..to_despawn.len() {
-        spawn_npc(
-            &mut commands,
-            &asset_server,
-            &mut texture_atlas_layouts,
-            Vec3::new(
-                rand::random::<f32>() * 400.0 - 200.0,
-                rand::random::<f32>() * 400.0 - 200.0,
-                0.0
-            ),
-            if rand::random::<f32>() > 0.5 {
-                NpcGender::Male
-            } else {
-                NpcGender::Female
-            }
-        );
+    if  TypeId::of::<T>() == TypeId::of::<NpcEntity>() {
+        for _ in 0..to_despawn.len() {
+            spawn_npc(
+                &mut commands,
+                &asset_server,
+                &mut texture_atlas_layouts,
+                Vec3::new(
+                    rand::random::<f32>() * 400.0 - 200.0,
+                    rand::random::<f32>() * 400.0 - 200.0,
+                    0.0
+                ),
+                if rand::random::<f32>() > 0.5 {
+                    NpcGender::Male
+                } else {
+                    NpcGender::Female
+                }
+            );
+        }
     }
 }
 
@@ -158,6 +217,7 @@ pub fn spawn_npc(
         },
         Transform::from_scale(Vec3::splat(6.0)).with_translation(position),
         animation_config,
+        Despawns{ timer: None }
     ));
 }
 

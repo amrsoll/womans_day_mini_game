@@ -76,10 +76,12 @@ fn give_flowers_to_npcs(
             // If player is close to NPC (within 100 units), give flower
             if distance < 100.0 {
                 // Increase score if female NPC receives flower
-                if npc_entity.gender == NpcGender::Female && !received_flowers.has_received {
-                    game.score += 3;
-                } else if npc_entity.gender == NpcGender::Male && !received_flowers.has_received {
-                    game.score += 1;
+                if !received_flowers.has_received  {
+                    if npc_entity.gender == NpcGender::Female {
+                        game.score += 3;
+                    } else if npc_entity.gender == NpcGender::Male {
+                        game.score += 1;
+                    }
                 }
                 received_flowers.has_received = true;
             }
@@ -219,8 +221,14 @@ fn main() {
         .add_systems(Update, npc::execute_npc_animations)
         .add_systems(Update, (PlayerEntity::set_movement_speed, move_players).chain())
         .add_systems(Update, (set_npc_movement, move_npcs).chain())
-        .add_systems(Update, give_flowers_to_npcs.run_if(input_just_pressed(KeyCode::Space)))
+        .add_systems(Update, (
+            give_flowers_to_npcs,
+            spawn_flower_over_npc
+        ).chain().run_if(input_just_pressed(KeyCode::Space)))
         .add_systems(Update, update_score_display)
-        .add_systems(Update, npc::despawn_npc_after_flowers)
+        .add_systems(Update, (
+            despawn_entities::<NpcEntity>,
+            despawn_entities::<FlowerEntity>
+        ))
         .run();
 }
