@@ -2,6 +2,7 @@ use bevy::{input::*, prelude::*};
 use bevy::dev_tools::picking_debug::DebugPickingMode;
 // use bevy::dev_tools::picking_debug::DebugPickingPlugin;
 use crate::common_conditions::input_just_pressed;
+use crate::npc::stay_in_area;
 
 #[derive(Component)]
 struct ScoreDisplay;
@@ -220,6 +221,7 @@ fn main() {
         .add_systems(Update, execute_animations)
         .add_systems(Update, npc::execute_npc_animations)
         .add_systems(Update, (PlayerEntity::set_movement_speed, move_players).chain())
+        .add_systems(Update, move_linear_motion)
         .add_systems(Update, (set_npc_movement, move_npcs).chain())
         .add_systems(Update, (
             give_flowers_to_npcs,

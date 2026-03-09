@@ -2,16 +2,27 @@ use bevy::math::Vec2;
 use bevy::prelude::*;
 use std::any::TypeId;
 
+use crate::animation::*;
+
 pub const AREA_SIZE: Vec2 = vec2(1280.0, 720.0);
+
+fn positive_rem(x: f32, div: f32) -> f32 {
+    let rem = x % div;
+    if rem < 0.0 {
+        return rem + div.abs();
+    }
+    return rem;
+}
 
 // Centralise on the center
 pub fn stay_in_area(position: Vec2) -> Vec2 {
     Vec2 {
-        x: (position.x + AREA_SIZE.x / 2.0) % AREA_SIZE.x - AREA_SIZE.x / 2.0,
-        y: (position.y - AREA_SIZE.y / 2.0) % AREA_SIZE.y + AREA_SIZE.y / 2.0,
+        x: positive_rem(position.x + AREA_SIZE.x / 2.0,  AREA_SIZE.x) - AREA_SIZE.x / 2.0,
+        y: positive_rem(position.y + AREA_SIZE.y / 2.0, AREA_SIZE.y) - AREA_SIZE.y / 2.0,
+        // x: position.x % (AREA_SIZE.x/2.0),
+        // y: position.y % (AREA_SIZE.y/2.0),
     }
 }
-
 
 // mod animation;
 use crate::animation::*;
@@ -125,11 +136,12 @@ pub fn spawn_flower_over_npc(
                 )),
                 // Add a component to identify flower entities for later despawning
                 FlowerEntity,
-                Despawns { timer: Some(Timer::from_seconds(5.0, TimerMode::Once)) },
+                Despawns { timer: Some(Timer::from_seconds(3.0, TimerMode::Once)) },
+                LinearMotion { speed: vec2(0.0, 50.0) }
             ));
             received_flowers.flower_spawned = true;
             match despawns.timer {
-                None => despawns.timer = Some(Timer::from_seconds(5.0, TimerMode::Once)),
+                None => despawns.timer = Some(Timer::from_seconds(3.0, TimerMode::Once)),
                 _ => (),
             }
         }
