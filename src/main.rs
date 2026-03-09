@@ -111,6 +111,16 @@ fn setup(
 
     commands.spawn(Camera2d);
 
+    // Add background image
+    let background_texture = asset_server.load("scenes/Pallet_Town.webp");
+    commands.spawn((
+        Sprite {
+        image: background_texture.clone(),
+        ..Default::default()
+        },
+        Transform::from_scale(Vec3::splat(3.0)).with_translation(Vec3::new(0.0, 0.0, -50.0))
+    ));
+
     // Create a minimal UI explaining how to interact with the example
     commands.spawn((
         Text::new("WASD / Arrows for movement\nMouse to aim\nSpace to give flowers to nearby people"),

@@ -103,7 +103,7 @@ features = [
 # #   "spirv_shader_passthrough", # Vulkan: allow direct loading of SPIR-V shader blobs without validation
 #   # "webgpu",                   # Web: use the faster, modern, experimental WebGPU API instead of WebGL2
 # #   "statically-linked-dxc",    # Windows: embed the DirectX Shader Compiler into your game binary
-# #   "web",                      # Web platform integration
+  "web",                      # Web platform integration
 # #   "libm",                     # Use libm for math on non-std / embedded platforms
 # #   "critical-section",         # For supporting no-std / embedded
 # #   "default_no_std",
@@ -157,7 +157,7 @@ features = [
 # #   "tga",  # Truevision Targa image format
 # #   "tiff", # TIFF image format
 # #   "wav",  # Audio: Uncompressed WAV
-# #   "webp", # WebP image format
+  "webp", # WebP image format
 # #   "zlib", # zlib compression support in KTX2 files
 # #   "symphonia-aac", # AAC audio format (via Symphonia library)
 # #   "symphonia-flac", # Alternative FLAC audio decoder (via Symphonia library)
