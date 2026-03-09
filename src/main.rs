@@ -123,7 +123,7 @@ fn setup(
 
     // Create a minimal UI explaining how to interact with the example
     commands.spawn((
-        Text::new("WASD / Arrows for movement\nMouse to aim\nSpace to give flowers to nearby people"),
+        Text::new("WASD / Arrows for movement\nSpace to give flowers to nearby people"),
         Node {
             position_type: PositionType::Absolute,
             top: px(12),
