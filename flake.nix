@@ -2,7 +2,7 @@
   description = "Nix + WebAssembly example project";
 
   inputs = {
-    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1.*.tar.gz";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     fenix = {
       url = "https://flakehub.com/f/nix-community/fenix/0.1.*.tar.gz";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -11,8 +11,6 @@
       url = "https://flakehub.com/f/nix-community/naersk/0.1.*.tar.gz";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    flake-compat.url = "https://flakehub.com/f/edolstra/flake-compat/*.tar.gz";
-    flake-schemas.url = "https://flakehub.com/f/DeterminateSystems/flake-schemas/*.tar.gz";
   };
 
   outputs = { self, ... }@inputs:
@@ -23,7 +21,7 @@
         pkgs = import inputs.nixpkgs { inherit system; overlays = [ self.overlays.default ]; };
         inherit system;
       });
-      rustWasmTarget = "wasm32-wasip1";
+      rustWasmTarget = "wasm32-unknown-unknown";
     in
     {
       overlays.default = final: prev: rec {
@@ -37,11 +35,9 @@
             targets.${rustWasmTarget}.latest.rust-std
           ];
 
-        buildRustWasiWasm = self.lib.buildRustWasiWasm final;
+        buildRustWasm = self.lib.buildRustWasm final;
         buildWasmPackage = self.lib.buildWasmPackage final;
-        buildRustWasmScript = self.lib.buildRustWasmScript final;
-        buildRustWasmEdgeExec = self.lib.buildRustWasmEdgeExec final;
-        buildRustWasmtimeExec = self.lib.buildRustWasmtimeExec final;
+        buildRustServerExec = self.lib.buildRustServerExec final;
       };
 
       # Development environments
@@ -58,19 +54,19 @@
               wasmtime # Wasm runtime
               cargo-edit # cargo add, cargo rm, etc.
               tree # for visualizing results
+              alsa-lib.dev
             ]);
           };
       });
 
       packages = forAllSystems ({ pkgs, system }: rec {
         default = hello-wasm;
-        hello-wasm = pkgs.buildRustWasiWasm {
-          name = "hello-wasm";
+        hello-wasm = pkgs.buildRustWasm {
+          name = "mothers-day-mini-game";
           src = self;
         };
         hello-wasm-pkg = pkgs.buildWasmPackage { };
-        hello-wasmtime-exec = pkgs.buildRustWasmtimeExec { };
-        hello-wasmedge-exec = pkgs.buildRustWasmEdgeExec { };
+        hello-wasm-server-exec = pkgs.buildRustServerExec { };
       });
 
       lib = {
@@ -94,7 +90,7 @@
             inherit cargoToml;
           };
 
-        buildRustWasiWasm = pkgs: { name, src }:
+        buildRustWasm = pkgs: { name, src }:
           let
             naerskLib = pkgs.callPackage inputs.naersk {
               cargo = pkgs.rustToolchain;
@@ -104,19 +100,14 @@
           naerskLib.buildPackage {
             inherit name src;
             CARGO_BUILD_TARGET = rustWasmTarget;
-            buildInputs = with pkgs; [ wabt ];
-            postInstall = ''
-              mkdir -p $out/lib
-              wasm-strip $out/bin/${name}.wasm -o $out/lib/${name}.wasm
-              rm -rf $out/bin
-              wasm-validate $out/lib/${name}.wasm
-            '';
+            buildInputs = with pkgs; [ wabt alsa-lib.dev ];
           };
 
-        buildRustWasmtimeExec = pkgs: args:
+        # only works with wasm32-unknown-unknown ?
+        buildRustServerExec = pkgs: args:
           let
             finalArgs = self.lib.handleArgs args;
-            wasmPkg = self.lib.buildRustWasiWasm pkgs {
+            wasmPkg = self.lib.buildRustWasm pkgs {
               inherit (finalArgs) name src;
             };
           in
@@ -125,30 +116,7 @@
             src = finalArgs.src;
             nativeBuildInputs = with pkgs; [ makeWrapper ];
             installPhase = ''
-              mkdir -p $out/lib
-              cp ${wasmPkg}/lib/${finalArgs.name}.wasm $out/lib/${finalArgs.pkgName}.wasm
-              makeWrapper ${pkgs.wasmtime}/bin/wasmtime $out/bin/${finalArgs.pkgName} \
-                --set WASMTIME_NEW_CLI 1 \
-                --add-flags "$out/lib/${finalArgs.pkgName}.wasm"
-            '';
-          };
-
-        buildRustWasmEdgeExec = pkgs: args:
-          let
-            finalArgs = self.lib.handleArgs args;
-            wasmPkg = self.lib.buildRustWasiWasm pkgs {
-              inherit (finalArgs) name src;
-            };
-          in
-          pkgs.stdenv.mkDerivation rec {
-            name = finalArgs.name;
-            src = finalArgs.src;
-            nativeBuildInputs = with pkgs; [ makeWrapper ];
-            installPhase = ''
-              mkdir -p $out/lib
-              cp ${wasmPkg}/lib/${finalArgs.name}.wasm $out/lib/${finalArgs.pkgName}.wasm
-              makeWrapper ${pkgs.wasmedge}/bin/wasmedge $out/bin/${finalArgs.pkgName} \
-                --add-flags "$out/lib/${finalArgs.pkgName}.wasm"
+              makeWrapper wasm-server-runner ${wasmPkg}/${finalArgs.name}.wasm
             '';
           };
 
@@ -156,7 +124,7 @@
         buildWasmPackage = pkgs: args:
           let
             finalArgs = self.lib.handleArgs args;
-            wasmPkg = self.lib.buildRustWasiWasm pkgs {
+            wasmPkg = self.lib.buildRustWasm pkgs {
               inherit (finalArgs) name src;
             };
           in

@@ -28,16 +28,9 @@ jobs:
 
       - name: Display package contents
         run: |
-          nix build ".#hello-wasm-pkg"
+          nix build
           nix develop --command tree ./result
-
-      - name: Build all packages
-        run: |
-          for pkg in hello-wasm-pkg hello-wasmedge-exec hello-wasmtime-exec; do
-            nix build ".#${pkg}"
-          done
-
-      - name: Run scripts
-        run: |
-          nix run ".#hello-wasmedge-exec"
-          nix run ".#hello-wasmtime-exec"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mini-game.wasm
+          path: result/bin/mothers-day-mini-game.wasm
