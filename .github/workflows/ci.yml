@@ -8,6 +8,10 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  # Target triple
+  TARGET: wasm32-unknown-unknown
+  # Either debug or release
+  OPTIMISATION: release
 
 jobs:
   build:
@@ -18,10 +22,12 @@ jobs:
       - name: Build
         run: |
           rustup target add wasm32-unknown-unknown 
-          cargo build
-      - name: Display package contents
+          cargo build --target ${TARGET} --${OPTIMISATION}
+          tree -L 3 target
+      - name: move assets to published artifact
         run: |
-          mv result/bin/womans-day-mini-game.wasm public/wasm.wasm
+          mv target/${TARGET}/${OPTIMISATION}/womans-day-mini-game.wasm public/wasm.wasm
+          mv assets public/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:
