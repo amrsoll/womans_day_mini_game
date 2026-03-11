@@ -62,7 +62,7 @@
       packages = forAllSystems ({ pkgs, system }: rec {
         default = hello-wasm;
         hello-wasm = pkgs.buildRustWasm {
-          name = "mothers-day-mini-game";
+          name = "womans-day-mini-game";
           src = self;
         };
         hello-wasm-pkg = pkgs.buildWasmPackage { };

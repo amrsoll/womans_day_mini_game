@@ -33,4 +33,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: mini-game.wasm
-          path: result/bin/mothers-day-mini-game.wasm
+          path: result/bin/womans-day-mini-game.wasm

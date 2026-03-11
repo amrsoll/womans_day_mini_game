@@ -3702,18 +3702,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mothers-day-mini-game"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "console_error_panic_hook",
- "getrandom 0.2.16",
- "rand 0.8.5",
- "wasm-bindgen",
- "wasm-server-runner",
-]
-
-[[package]]
 name = "moxcms"
 version = "0.7.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6802,6 +6790,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6f42320e61fe2cfd34354ecb597f86f413484a798ba44a8ca1165c58d42da6c1"
 dependencies = [
  "bitflags 2.9.1",
+]
+
+[[package]]
+name = "womans-day-mini-game"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "console_error_panic_hook",
+ "getrandom 0.2.16",
+ "rand 0.8.5",
+ "wasm-bindgen",
+ "wasm-server-runner",
 ]
 
 [[package]]
