@@ -11,16 +11,10 @@ env:
 
 jobs:
   ci:
-    runs-on: ubuntu-22.04
+    runs-on: nixos/nix
     steps:
       - name: git checkout
         uses: actions/checkout@v3
-
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v10
-
-      - name: Set up Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@v4
 
       - name: nix flake check
         run: |
