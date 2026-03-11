@@ -7,11 +7,12 @@ on:
       - main
 
 env:
-  CARGO_TERM_COLOR: always
+  PROJ: "womans-day-mini-game"
   # Target triple
   TARGET: wasm32-unknown-unknown
   # Either debug or release
   OPTIMISATION: release
+  CARGO_TERM_COLOR: always
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -40,9 +41,10 @@ jobs:
           rustup target add wasm32-unknown-unknown 
           cargo build --target ${TARGET} --${OPTIMISATION}
           tree -L 3 target
-      - name: move assets to published artifact
+      - name: Integrate the wasm in the webpage
         run: |
-          mv target/${TARGET}/${OPTIMISATION}/womans-day-mini-game.wasm public/womens-day-mini-game_bg.wasm
+          cargo install wasm-bindgen-cli
+          $HOME/.cargo/bin/wasm-bindgen --target web --no-typescript --out-dir public/ --out-name "${PROJ}" target/wasm32-unknown-unknown/release/${PROJ}.wasm
           mv assets public/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
