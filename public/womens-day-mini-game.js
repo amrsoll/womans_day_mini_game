@@ -1904,7 +1904,7 @@ function __wbg_get_imports() {
     };
     return {
         __proto__: null,
-        "./womens_day_minigame_bg.js": import0,
+        "./womens-day-mini-game_bg.js": import0,
     };
 }
 
@@ -2366,7 +2366,7 @@ async function __wbg_init(module_or_path) {
     }
 
     if (module_or_path === undefined) {
-        module_or_path = new URL('womens_day_minigame_bg.wasm', import.meta.url);
+        module_or_path = new URL('womens-day-mini-game_bg.wasm', import.meta.url);
     }
     const imports = __wbg_get_imports();
 

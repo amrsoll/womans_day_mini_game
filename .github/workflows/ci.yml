@@ -42,7 +42,7 @@ jobs:
           tree -L 3 target
       - name: move assets to published artifact
         run: |
-          mv target/${TARGET}/${OPTIMISATION}/womans-day-mini-game.wasm public/wasm.wasm
+          mv target/${TARGET}/${OPTIMISATION}/womans-day-mini-game.wasm public/womens-day-mini-game_bg.wasm
           mv assets public/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
